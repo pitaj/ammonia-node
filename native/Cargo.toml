@@ -1,0 +1,22 @@
+[package]
+name = "ammonia-node"
+version = "0.2.0"
+authors = ["Peter Jaszkowiak <p.jaszkow@gmail.com>"]
+license = "MIT"
+build = "build.rs"
+exclude = ["artifacts.json", "index.node"]
+edition = "2018"
+
+[lib]
+name = "ammonia_node"
+crate-type = ["dylib"]
+
+[build-dependencies]
+neon-build = "0.2.0"
+
+[dependencies]
+neon = "0.2.0"
+ammonia = "2.0"
+lru = "0.1.11"
+lazy_static = "1.2.0"
+internship = "0.3.1"

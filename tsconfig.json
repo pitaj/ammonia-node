@@ -1,0 +1,22 @@
+{
+  "include": [
+    "src/**/*.ts"
+  ],
+  "compilerOptions": {
+    "outDir": "lib",
+    "lib": ["es2015"],
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "alwaysStrict": true,
+    "sourceMap": true,
+    "baseUrl": "",
+    "paths": {
+      "native": ["./native"]
+    }
+  },
+  "typeAcquisition": {
+    "enable": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "ammonia-node",
+  "version": "0.2.0",
+  "description": "Node bindings for the Ammonia HTML sanitation library",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "github.com/pitaj/ammonia-node"
+  },
+  "author": "Peter Jaszkowiak <p.jaszkow@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "neon-cli": "^0.2.0"
+  },
+  "scripts": {
+    "install": "npm run build-ts && npm run build-neon",
+    "build-ts": "tsc",
+    "build-neon": "neon build"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.21",
+    "@typescript-eslint/eslint-plugin": "^1.2.0",
+    "@typescript-eslint/parser": "^1.2.0",
+    "eslint": "^5.13.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "typescript": "^3.3.1"
+  }
+}
