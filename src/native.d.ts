@@ -175,9 +175,11 @@ declare module 'native' {
   }
 
   /**
-   * A Cleaner object
+   * Clean HTML fragments based on the given options
+   *
+   * Prefer this over the `clean` function when using the same options many times
    */
-  export class Ammonia {
+  export class Cleaner {
     constructor(options: Partial<BuilderOptions>);
 
     /**
@@ -188,6 +190,9 @@ declare module 'native' {
 
   /**
    * Sanitizes an HTML fragment in a string according to the given options.
+   * Shortcut for `(new Cleaner(options)).clean(input)`
+   *
+   * Use the `Cleaner` class instead when using the same options many times
    */
   export function clean(input: string, options: Partial<BuilderOptions>): string;
 }

@@ -11,7 +11,11 @@ use simple_interner::{Interner, Interned};
 
 type Holder = Interner<str>;
 
-fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObject>, holder: &'a Holder) -> Result<Builder<'a>, neon::result::Throw> {
+fn build_from_arguments<'a, T: neon::object::This>(
+    cx: &mut CallContext<T>,
+    options: Handle<JsObject>,
+    holder: &'a Holder
+) -> Result<Builder<'a>, neon::result::Throw> {
     let mut builder = Builder::new();
 
     macro_rules! hold {
@@ -35,7 +39,7 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
         ($option_name:ident, JsBoolean, bool) => {{
             let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsBoolean>() {
-                let val = prop.downcast_or_throw::<JsBoolean, FunctionContext>(cx)?;
+                let val = prop.downcast_or_throw::<JsBoolean, _>(cx)?;
                 builder.$option_name(val.value());
             }
         }};
@@ -44,14 +48,14 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
             if prop.is_a::<JsNull>() {
                 builder.$option_name(None);
             } else if prop.is_a::<JsString>() {
-                let val = prop.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                let val = prop.downcast_or_throw::<JsString, _>(cx)?;
                 builder.$option_name(Some(hold!(val)));
             }
         }};
         ($option_name:ident, JsString, UrlRelative) => {{
             let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsString>() {
-                let val = prop.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                let val = prop.downcast_or_throw::<JsString, _>(cx)?;
 
                 match val.value().as_ref() {
                     "deny" => {
@@ -63,14 +67,14 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
                     _ => cx.throw_type_error("Invalid `url_relative` option")?,
                 }
             } else if prop.is_a::<JsArray>() {
-                let arr = prop.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
+                let arr = prop.downcast_or_throw::<JsArray, _>(cx)?;
                 let val = arr.get(cx, 0)?;
-                let val = val.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                let val = val.downcast_or_throw::<JsString, _>(cx)?;
 
                 match val.value().as_ref() {
                     "resolve-with-base" => {
                         let base = arr.get(cx, 1)?;
-                        let base = base.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                        let base = base.downcast_or_throw::<JsString, _>(cx)?;
                         
                         let url = Url::parse(&base.value()).unwrap();
 
@@ -81,7 +85,7 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
                     // TODO
                     // "custom" => {
                     //     let func = arr.get(cx, 1)?;
-                    //     let func = func.downcast_or_throw::<JsFunction, FunctionContext>(cx)?;
+                    //     let func = func.downcast_or_throw::<JsFunction, _>(cx)?;
                         
                     //     let closure = |url: &str| -> Option<Cow<str>> {
                     //         let url = cx.string(url);
@@ -89,7 +93,7 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
                     //         if returned.is_a::<JsNull>() {
                     //             None
                     //         } else {
-                    //             let returned = returned.downcast_or_throw::<JsString, FunctionContext>(cx).unwrap();
+                    //             let returned = returned.downcast_or_throw::<JsString, _>(cx).unwrap();
                     //             Some(returned.value().into())
                     //         }
                     //     };
@@ -104,11 +108,11 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
         ($option_name:ident, JsArray, HashSet<&str>) => {{
             let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsArray>() {
-                let val = prop.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
+                let val = prop.downcast_or_throw::<JsArray, _>(cx)?;
                 let mut set: HashSet<&str> = HashSet::with_capacity(val.len() as usize);
                 
                 for x in val.to_vec(cx)? {
-                    let s = x.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                    let s = x.downcast_or_throw::<JsString, _>(cx)?;
                     set.insert(hold!(s));
                 }
                 
@@ -118,20 +122,20 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
         ($option_name:ident, JsObject, HashMap<&str, HashSet<&str>>) => {{
             let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsObject>() {
-                let obj = prop.downcast_or_throw::<JsObject, FunctionContext>(cx)?;
+                let obj = prop.downcast_or_throw::<JsObject, _>(cx)?;
                 let prop_names = obj.get_own_property_names(cx)?;
 
                 let mut map: HashMap<&str, HashSet<&str>> = HashMap::with_capacity(prop_names.len() as usize); 
                 for key in prop_names.to_vec(cx)? {
-                    let key = key.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                    let key = key.downcast_or_throw::<JsString, _>(cx)?;
 
                     let arr = obj.get(cx, key)?;
-                    let arr = arr.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
+                    let arr = arr.downcast_or_throw::<JsArray, _>(cx)?;
                     
                     let mut set: HashSet<&str> = HashSet::with_capacity(arr.len() as usize);
                 
                     for x in arr.to_vec(cx)? {
-                        let s = x.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                        let s = x.downcast_or_throw::<JsString, _>(cx)?;
                         set.insert(hold!(s));
                     }
 
@@ -144,28 +148,28 @@ fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObjec
         ($option_name:ident, JsObject, HashMap<&str, HashMap<&str, HashSet<&str>>>) => {{
             let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsObject>() {
-                let obj1 = prop.downcast_or_throw::<JsObject, FunctionContext>(cx)?;
+                let obj1 = prop.downcast_or_throw::<JsObject, _>(cx)?;
                 let prop_names1 = obj1.get_own_property_names(cx)?;
 
                 let mut map1: HashMap<&str, HashMap<&str, HashSet<&str>>> = HashMap::with_capacity(prop_names1.len() as usize); 
                 for key1 in prop_names1.to_vec(cx)? {
-                    let key1 = key1.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                    let key1 = key1.downcast_or_throw::<JsString, _>(cx)?;
                     
                     let obj2 = obj1.get(cx, key1)?;
-                    let obj2 = obj2.downcast_or_throw::<JsObject, FunctionContext>(cx)?;
+                    let obj2 = obj2.downcast_or_throw::<JsObject, _>(cx)?;
                     let prop_names2 = obj2.get_own_property_names(cx)?;
 
                     let mut map2: HashMap<&str, HashSet<&str>> = HashMap::with_capacity(prop_names2.len() as usize);
                     for key2 in prop_names2.to_vec(cx)? {
-                        let key2 = key2.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                        let key2 = key2.downcast_or_throw::<JsString, _>(cx)?;
 
                         let arr = obj2.get(cx, key2)?;
-                        let arr = arr.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
+                        let arr = arr.downcast_or_throw::<JsArray, _>(cx)?;
                         
                         let mut set: HashSet<&str> = HashSet::with_capacity(arr.len() as usize);
                     
                         for x in arr.to_vec(cx)? {
-                            let s = x.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                            let s = x.downcast_or_throw::<JsString, _>(cx)?;
                             set.insert(hold!(s));
                         }
 
@@ -212,7 +216,126 @@ fn clean(mut cx: FunctionContext) -> JsResult<JsString> {
     Ok(cx.string(cleaned))
 }
 
+/// This datatype holds pointers to the Holder and Builder
+/// This _should be_ safe because builder only holds refs to slices in holder
+pub struct CleanerBox {
+    holder: usize,
+    builder: usize,
+}
+impl CleanerBox {
+    fn new<T: neon::object::This>(
+        mut cx: CallContext<T>,
+        options: Handle<JsObject>
+    ) -> Result<CleanerBox, neon::result::Throw> {
+        let holder_p = Box::into_raw(Box::new(Interner::new()));
+
+        let holder = unsafe { holder_p.as_ref().unwrap() };
+        let builder = build_from_arguments(&mut cx, options, holder)?;
+
+        let builder_p = Box::into_raw(Box::new(builder));
+
+        Ok(CleanerBox {
+            holder: holder_p as usize,
+            builder: builder_p as usize,
+        })
+    }
+
+    fn clean(&mut self, input: String) -> String {
+        let builder_p = self.builder;
+
+        let builder = unsafe {
+            Box::from_raw(builder_p as *mut Builder<'static>)
+        };
+
+        let cleaned = {
+            let doc = builder.clean(&input);
+            doc.to_string()
+        };
+
+        self.builder = Box::into_raw(builder) as usize;
+
+        cleaned
+    }
+}
+impl Drop for CleanerBox {
+    fn drop(&mut self) {
+        let builder_p = self.builder;
+        let holder_p = self.holder;
+
+        unsafe {
+            Box::from_raw(builder_p as *mut Builder<'static>);
+            Box::from_raw(holder_p as *mut Holder);
+        }
+    }
+}
+
+// pub struct Cleaner<'a> {
+//     holder: Box<Holder>,
+//     builder: Builder<'a>,
+// }
+
+// #[repr(C)]
+// #[derive(Clone, Copy)]
+// pub struct JsCleaner(::neon::macro_internal::runtime::raw::Local);
+
+// impl ::neon::handle::Managed for JsCleaner {
+//     fn to_raw(self) -> ::neon::macro_internal::runtime::raw::Local {
+//         let JsCleaner(raw) = self;
+//         raw
+//     }
+//     fn from_raw(raw: ::neon::macro_internal::runtime::raw::Local) -> Self {
+//         JsCleaner(raw)
+//     }
+// }
+// impl Class for JsCleaner {
+//     type Internals = Cleaner<'b>;
+
+//     fn setup<'a, C: ::neon::context::Context<'a>>(_: &mut C) ->
+//         ::neon::result::NeonResult<::neon::object::ClassDescriptor<'a, Self>> {
+        
+//         Ok(Self::describe("Cleaner", {
+//             fn constructor(mut cx: CallContext<JsUndefined>) -> NeonResult<Cleaner> {
+//                 let options = cx.argument::<JsObject>(0)?;
+
+//                 let holder = Interner::new();
+//                 let builder = build_from_arguments(&mut cx, options, &holder)?;
+
+//                 Ok(Cleaner {
+//                     holder,
+//                     builder,
+//                 })
+//             }
+
+//             ::neon::macro_internal::AllocateCallback(constructor)
+//         }))
+//     }
+// }
+
+declare_types! {
+    pub class JsCleaner for CleanerBox {
+        init(mut cx) {
+            let options = cx.argument::<JsObject>(0)?;
+
+            CleanerBox::new(cx, options)
+        }
+
+        method clean(mut cx) {
+            let input: String = cx.argument::<JsString>(0)?.value();
+
+            let cleaned = {
+                let mut this = cx.this();
+                let guard = cx.lock();
+                let mut cleaner = this.borrow_mut(&guard);
+                cleaner.clean(input)
+            };
+
+            Ok(cx.string(cleaned).upcast())
+        }
+    }
+}
+
 register_module!(mut m, {
     m.export_function("clean", clean)?;
+    m.export_class::<JsCleaner>("Cleaner")?;
     Ok(())
 });
