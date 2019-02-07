@@ -1,35 +1,23 @@
 #[macro_use]
 extern crate neon;
 extern crate ammonia;
-
-mod string_cache;
+extern crate simple_interner;
 
 use std::collections::{HashMap, HashSet};
 
 use neon::prelude::*;
-use ammonia::{Builder, UrlRelative, Url}; // UrlRelativeEvaluate };
+use ammonia::{Builder, UrlRelative, Url}; // UrlRelativeEvaluate};
+use simple_interner::{Interner, Interned};
 
-struct Holder<T>(Vec<T>);
-impl<'a, T> Holder<T> {
-    pub fn push(&mut self, item: T) -> &'a T {
-        self.0.push(item);
-        unsafe {
-            let ptr = self.0.as_ptr();
-            let reference: &'a T = &*ptr;
-            reference
-        }
-    }
-}
+type Holder = Interner<str>;
 
-fn build_from_arguments<'a>(mut cx: FunctionContext<'a>, _input: Handle<JsString>, options: Handle<JsObject>) -> Result<(Builder<'a>, Holder<String>, FunctionContext<'a>), neon::result::Throw> {
+fn build_from_arguments<'a>(cx: &'a mut FunctionContext, options: Handle<JsObject>, holder: &'a Holder) -> Result<Builder<'a>, neon::result::Throw> {
     let mut builder = Builder::new();
-    let mut strings: Holder<String> = Holder(Vec::new());
 
-    // FIXME: this is really hacky
-    macro_rules! leak {
+    macro_rules! hold {
         ($e:expr) => {{
-            let s = $e.value();
-            strings.push(s)
+            let value = $e.value();
+            Interned::get(&holder.get_or_insert(value))
         }}
     }
 
@@ -45,25 +33,25 @@ fn build_from_arguments<'a>(mut cx: FunctionContext<'a>, _input: Handle<JsString
     /// convert!(subject, JS Type, Rust Type)
     macro_rules! set_opt {
         ($option_name:ident, JsBoolean, bool) => {{
-            let prop = options.get(&mut cx, stringify!(option_name))?;
+            let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsBoolean>() {
-                let val = prop.downcast_or_throw::<JsBoolean, FunctionContext>(&mut cx)?;
+                let val = prop.downcast_or_throw::<JsBoolean, FunctionContext>(cx)?;
                 builder.$option_name(val.value());
             }
         }};
         ($option_name:ident, JsString, Option<&str>) => {{
-            let prop = options.get(&mut cx, stringify!(option_name))?;
+            let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsNull>() {
                 builder.$option_name(None);
             } else if prop.is_a::<JsString>() {
-                let val = prop.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
-                builder.$option_name(Some(leak!(val)));
+                let val = prop.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                builder.$option_name(Some(hold!(val)));
             }
         }};
         ($option_name:ident, JsString, UrlRelative) => {{
-            let prop = options.get(&mut cx, stringify!(option_name))?;
+            let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsString>() {
-                let val = prop.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
+                let val = prop.downcast_or_throw::<JsString, FunctionContext>(cx)?;
 
                 match val.value().as_ref() {
                     "deny" => {
@@ -75,14 +63,14 @@ fn build_from_arguments<'a>(mut cx: FunctionContext<'a>, _input: Handle<JsString
                     _ => cx.throw_type_error("Invalid `url_relative` option")?,
                 }
             } else if prop.is_a::<JsArray>() {
-                let arr = prop.downcast_or_throw::<JsArray, FunctionContext>(&mut cx)?;
-                let val = arr.get(&mut cx, 0)?;
-                let val = val.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
+                let arr = prop.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
+                let val = arr.get(cx, 0)?;
+                let val = val.downcast_or_throw::<JsString, FunctionContext>(cx)?;
 
                 match val.value().as_ref() {
                     "resolve-with-base" => {
-                        let base = arr.get(&mut cx, 1)?;
-                        let base = base.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
+                        let base = arr.get(cx, 1)?;
+                        let base = base.downcast_or_throw::<JsString, FunctionContext>(cx)?;
                         
                         let url = Url::parse(&base.value()).unwrap();
 
@@ -92,16 +80,16 @@ fn build_from_arguments<'a>(mut cx: FunctionContext<'a>, _input: Handle<JsString
                     },
                     // TODO
                     // "custom" => {
-                    //     let func = arr.get(&mut cx, 1)?;
-                    //     let func = func.downcast_or_throw::<JsFunction, FunctionContext>(&mut cx)?;
+                    //     let func = arr.get(cx, 1)?;
+                    //     let func = func.downcast_or_throw::<JsFunction, FunctionContext>(cx)?;
                         
                     //     let closure = |url: &str| -> Option<Cow<str>> {
                     //         let url = cx.string(url);
-                    //         let returned = func.call(&mut cx, cx.undefined(), vec![url]).unwrap();
+                    //         let returned = func.call(cx, cx.undefined(), vec![url]).unwrap();
                     //         if returned.is_a::<JsNull>() {
                     //             None
                     //         } else {
-                    //             let returned = returned.downcast_or_throw::<JsString, FunctionContext>(&mut cx).unwrap();
+                    //             let returned = returned.downcast_or_throw::<JsString, FunctionContext>(cx).unwrap();
                     //             Some(returned.value().into())
                     //         }
                     //     };
@@ -114,77 +102,77 @@ fn build_from_arguments<'a>(mut cx: FunctionContext<'a>, _input: Handle<JsString
             }
         }};
         ($option_name:ident, JsArray, HashSet<&str>) => {{
-            let prop = options.get(&mut cx, stringify!(option_name))?;
+            let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsArray>() {
-                let val = prop.downcast_or_throw::<JsArray, FunctionContext>(&mut cx)?;
-                let mut set: HashSet<&'static str> = HashSet::with_capacity(val.len() as usize);
+                let val = prop.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
+                let mut set: HashSet<&str> = HashSet::with_capacity(val.len() as usize);
                 
-                for x in val.to_vec(&mut cx)? {
-                    let s = x.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
-                    set.insert(leak!(s));
+                for x in val.to_vec(cx)? {
+                    let s = x.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                    set.insert(hold!(s));
                 }
                 
                 builder.$option_name(set);
             }
         }};
         ($option_name:ident, JsObject, HashMap<&str, HashSet<&str>>) => {{
-            let prop = options.get(&mut cx, stringify!(option_name))?;
+            let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsObject>() {
-                let obj = prop.downcast_or_throw::<JsObject, FunctionContext>(&mut cx)?;
-                let prop_names = obj.get_own_property_names(&mut cx)?;
+                let obj = prop.downcast_or_throw::<JsObject, FunctionContext>(cx)?;
+                let prop_names = obj.get_own_property_names(cx)?;
 
-                let mut map: HashMap<&'static str, HashSet<&'static str>> = HashMap::with_capacity(prop_names.len() as usize); 
-                for key in prop_names.to_vec(&mut cx)? {
-                    let key = key.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
+                let mut map: HashMap<&str, HashSet<&str>> = HashMap::with_capacity(prop_names.len() as usize); 
+                for key in prop_names.to_vec(cx)? {
+                    let key = key.downcast_or_throw::<JsString, FunctionContext>(cx)?;
 
-                    let arr = obj.get(&mut cx, key)?;
-                    let arr = arr.downcast_or_throw::<JsArray, FunctionContext>(&mut cx)?;
+                    let arr = obj.get(cx, key)?;
+                    let arr = arr.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
                     
-                    let mut set: HashSet<&'static str> = HashSet::with_capacity(arr.len() as usize);
+                    let mut set: HashSet<&str> = HashSet::with_capacity(arr.len() as usize);
                 
-                    for x in arr.to_vec(&mut cx)? {
-                        let s = x.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
-                        set.insert(leak!(s));
+                    for x in arr.to_vec(cx)? {
+                        let s = x.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                        set.insert(hold!(s));
                     }
 
-                    map.insert(leak!(key), set);
+                    map.insert(hold!(key), set);
                 }
 
                 builder.$option_name(map);
             }
         }};
         ($option_name:ident, JsObject, HashMap<&str, HashMap<&str, HashSet<&str>>>) => {{
-            let prop = options.get(&mut cx, stringify!(option_name))?;
+            let prop = options.get(cx, stringify!($option_name))?;
             if prop.is_a::<JsObject>() {
-                let obj1 = prop.downcast_or_throw::<JsObject, FunctionContext>(&mut cx)?;
-                let prop_names1 = obj1.get_own_property_names(&mut cx)?;
+                let obj1 = prop.downcast_or_throw::<JsObject, FunctionContext>(cx)?;
+                let prop_names1 = obj1.get_own_property_names(cx)?;
 
                 let mut map1: HashMap<&str, HashMap<&str, HashSet<&str>>> = HashMap::with_capacity(prop_names1.len() as usize); 
-                for key1 in prop_names1.to_vec(&mut cx)? {
-                    let key1 = key1.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
+                for key1 in prop_names1.to_vec(cx)? {
+                    let key1 = key1.downcast_or_throw::<JsString, FunctionContext>(cx)?;
                     
-                    let obj2 = obj1.get(&mut cx, key1)?;
-                    let obj2 = obj2.downcast_or_throw::<JsObject, FunctionContext>(&mut cx)?;
-                    let prop_names2 = obj2.get_own_property_names(&mut cx)?;
+                    let obj2 = obj1.get(cx, key1)?;
+                    let obj2 = obj2.downcast_or_throw::<JsObject, FunctionContext>(cx)?;
+                    let prop_names2 = obj2.get_own_property_names(cx)?;
 
-                    let mut map2: HashMap<&'static str, HashSet<&'static str>> = HashMap::with_capacity(prop_names2.len() as usize);
-                    for key2 in prop_names2.to_vec(&mut cx)? {
-                        let key2 = key2.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
+                    let mut map2: HashMap<&str, HashSet<&str>> = HashMap::with_capacity(prop_names2.len() as usize);
+                    for key2 in prop_names2.to_vec(cx)? {
+                        let key2 = key2.downcast_or_throw::<JsString, FunctionContext>(cx)?;
 
-                        let arr = obj2.get(&mut cx, key2)?;
-                        let arr = arr.downcast_or_throw::<JsArray, FunctionContext>(&mut cx)?;
+                        let arr = obj2.get(cx, key2)?;
+                        let arr = arr.downcast_or_throw::<JsArray, FunctionContext>(cx)?;
                         
-                        let mut set: HashSet<&'static str> = HashSet::with_capacity(arr.len() as usize);
+                        let mut set: HashSet<&str> = HashSet::with_capacity(arr.len() as usize);
                     
-                        for x in arr.to_vec(&mut cx)? {
-                            let s = x.downcast_or_throw::<JsString, FunctionContext>(&mut cx)?;
-                            set.insert(leak!(s));
+                        for x in arr.to_vec(cx)? {
+                            let s = x.downcast_or_throw::<JsString, FunctionContext>(cx)?;
+                            set.insert(hold!(s));
                         }
 
-                        map2.insert(leak!(key2), set);
+                        map2.insert(hold!(key2), set);
                     }
 
-                    map1.insert(leak!(key1), map2);
+                    map1.insert(hold!(key1), map2);
                 }
 
                 builder.$option_name(map1);
@@ -206,21 +194,25 @@ fn build_from_arguments<'a>(mut cx: FunctionContext<'a>, _input: Handle<JsString
     set_opt!(strip_comments, JsBoolean, bool);
     set_opt!(id_prefix, JsString, Option<&str>);
 
-    Ok((builder, strings, cx))
+    Ok(builder)
 }
 
 fn clean(mut cx: FunctionContext) -> JsResult<JsString> {
     let input = cx.argument::<JsString>(0)?;
     let options = cx.argument::<JsObject>(1)?;
 
-    let (builder, strings, mut cx) = build_from_arguments(cx, input, options)?;
+    let cleaned = {
+        let holder = Interner::new();
+        let builder = build_from_arguments(&mut cx, options, &holder)?;
 
-    drop(strings);
-    let output = builder.clean(&input.value()).to_string();
-    Ok(cx.string(output))
+        let doc = builder.clean(&input.value());
+        doc.to_string()
+    };
+    
+    Ok(cx.string(cleaned))
 }
 
-register_module!(mut cx, {
-    cx.export_function("clean", clean)?;
+register_module!(mut m, {
+    m.export_function("clean", clean)?;
     Ok(())
 });
