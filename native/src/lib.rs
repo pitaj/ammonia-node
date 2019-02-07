@@ -24,15 +24,6 @@ fn build_from_arguments<'a, T: neon::object::This>(
             Interned::get(&holder.get_or_insert(value))
         }}
     }
-
-    // conversions that need to be done
-    // boolean -> bool
-    // string | null -> Option(&str)
-    // string ==> UrlRelative
-    // string[] ==> HashSet<&str>
-    // { [string]: string[] } ==> HashMap<&str, HashSet<&str>>
-    // { [string]: { [string]: string[] }} ==> MashMap<&str, HashMap<&str, HashSet<&str>>>
-    // (string, string, string): string | null ==> Fn(&str, &str, &str) -> Option(&str)
     
     /// convert!(subject, JS Type, Rust Type)
     macro_rules! set_opt {
@@ -182,6 +173,8 @@ fn build_from_arguments<'a, T: neon::object::This>(
                 builder.$option_name(map1);
             }
         }};
+        // TODO
+        // (string, string, string): string | null ==> Fn(&str, &str, &str) -> Option(&str)
     }
 
     set_opt!(tags, JsArray, HashSet<&str>);
@@ -268,48 +261,6 @@ impl Drop for CleanerBox {
         }
     }
 }
-
-// pub struct Cleaner<'a> {
-//     holder: Box<Holder>,
-//     builder: Builder<'a>,
-// }
-
-// #[repr(C)]
-// #[derive(Clone, Copy)]
-// pub struct JsCleaner(::neon::macro_internal::runtime::raw::Local);
-
-// impl ::neon::handle::Managed for JsCleaner {
-//     fn to_raw(self) -> ::neon::macro_internal::runtime::raw::Local {
-//         let JsCleaner(raw) = self;
-//         raw
-//     }
-//     fn from_raw(raw: ::neon::macro_internal::runtime::raw::Local) -> Self {
-//         JsCleaner(raw)
-//     }
-// }
-// impl Class for JsCleaner {
-//     type Internals = Cleaner<'b>;
-
-//     fn setup<'a, C: ::neon::context::Context<'a>>(_: &mut C) ->
-//         ::neon::result::NeonResult<::neon::object::ClassDescriptor<'a, Self>> {
-        
-//         Ok(Self::describe("Cleaner", {
-//             fn constructor(mut cx: CallContext<JsUndefined>) -> NeonResult<Cleaner> {
-//                 let options = cx.argument::<JsObject>(0)?;
-
-//                 let holder = Interner::new();
-//                 let builder = build_from_arguments(&mut cx, options, &holder)?;
-
-//                 Ok(Cleaner {
-//                     holder,
-//                     builder,
-//                 })
-//             }
-
-//             ::neon::macro_internal::AllocateCallback(constructor)
-//         }))
-//     }
-// }
 
 declare_types! {
     pub class JsCleaner for CleanerBox {
