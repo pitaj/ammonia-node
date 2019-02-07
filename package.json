@@ -15,7 +15,8 @@
   "scripts": {
     "install": "npm run build-ts && npm run build-neon",
     "build-ts": "tsc",
-    "build-neon": "neon build"
+    "build-neon": "neon build",
+    "test": "mocha tests/*"
   },
   "devDependencies": {
     "@types/node": "^10.12.21",
@@ -24,6 +25,7 @@
     "eslint": "^5.13.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
+    "mocha": "^5.2.0",
     "typescript": "^3.3.1"
   }
 }
