@@ -32,7 +32,7 @@ declare module 'native' {
      * If a tag is not itself whitelisted, adding entries to this map will do nothing.
      *
      * @default {
-     * a =>
+     *   a =>
      *       href, hreflang
      *   bdo =>
      *       dir
@@ -108,7 +108,7 @@ declare module 'native' {
     /**
      * Configures the behavior for relative URLs: pass-through, resolve-with-base, or deny.
      *
-     * @default pass-through
+     * @default 'pass-through'
      */
     url_relative: 'deny' | 'pass-through' |
       ['resolve-with-base', string];
