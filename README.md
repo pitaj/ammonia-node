@@ -26,6 +26,13 @@ npm install ammonia
 yarn add ammonia
 ```
 
+Todo
+-----
+- Add a compatibility layer to make ammonia-node a drop-in replacement for [sanitize-html]
+- Benchmarks vs [sanitize-html]
+
+[sanitize-html]: https://github.com/punkave/sanitize-html "provides a simple HTML sanitizer with a clear API"
+
 Thanks
 ------
 
