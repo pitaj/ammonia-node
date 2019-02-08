@@ -1,14 +1,9 @@
 import * as assert from 'assert';
-import { BuilderOptions, Cleaner, clean } from 'native';
+import { BuilderOptions, Cleaner, clean } from './native';
 
 /* eslint-disable @typescript-eslint/camelcase */
 
-const hasOwnProperty = <T>(
-  obj: T,
-  key: keyof T
-): boolean => Object.prototype.hasOwnProperty.call(obj, key);
-
-const defaults: BuilderOptions = {
+export const defaults: BuilderOptions = {
   tags: [
     'a', 'abbr', 'acronym', 'area', 'article', 'aside', 'b', 'bdi',
     'bdo', 'blockquote', 'br', 'caption', 'center', 'cite', 'code',
@@ -57,6 +52,11 @@ const defaults: BuilderOptions = {
 };
 
 function validateOptions(options: Partial<BuilderOptions>): void {
+  const hasOwnProperty = <T>(
+    obj: T,
+    key: keyof T
+  ): boolean => Object.prototype.hasOwnProperty.call(obj, key);
+
   function assertArray(option: keyof BuilderOptions): void {
     if (!hasOwnProperty(options, option)) { return; }
 

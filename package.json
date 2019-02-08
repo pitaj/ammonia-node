@@ -16,7 +16,7 @@
     "install": "npm run build-ts && npm run build-neon",
     "build-ts": "tsc",
     "build-neon": "neon build",
-    "test": "mocha tests/*"
+    "test": "mocha tests/*.js"
   },
   "devDependencies": {
     "@types/node": "^10.12.21",
