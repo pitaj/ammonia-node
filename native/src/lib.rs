@@ -213,7 +213,7 @@ fn clean(mut cx: FunctionContext) -> JsResult<JsString> {
 /// This _should be_ safe because builder only holds refs to slices in holder
 pub struct CleanerBox {
     holder: *mut Holder,
-    builder: *mut Builder<'static>,
+    builder: Builder<'static>,
 }
 impl CleanerBox {
     fn new<T: neon::object::This>(
@@ -225,23 +225,15 @@ impl CleanerBox {
         let holder = unsafe { holder_p.as_ref().unwrap() };
         let builder = build_from_arguments(&mut cx, options, holder)?;
 
-        let builder_p = Box::into_raw(Box::new(builder));
-
         Ok(CleanerBox {
             holder: holder_p,
-            builder: builder_p as *mut Builder<'static>,
+            builder,
         })
     }
 
     fn clean(&self, input: String) -> String {
-        let builder_p = self.builder;
-
-        let builder = unsafe {
-            builder_p.as_ref().unwrap()
-        };
-
         let cleaned = {
-            let doc = builder.clean(&input);
+            let doc = self.builder.clean(&input);
             doc.to_string()
         };
 
@@ -250,12 +242,8 @@ impl CleanerBox {
 }
 impl Drop for CleanerBox {
     fn drop(&mut self) {
-        let builder_p = self.builder;
-        let holder_p = self.holder;
-
         unsafe {
-            Box::from_raw(builder_p);
-            Box::from_raw(holder_p);
+            Box::from_raw(self.holder);
         }
     }
 }

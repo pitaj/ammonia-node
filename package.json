@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "github.com/pitaj/ammonia-node"
+    "url": "https://github.com/pitaj/ammonia-node.git"
   },
   "author": "Peter Jaszkowiak <p.jaszkow@gmail.com>",
   "license": "MIT",
