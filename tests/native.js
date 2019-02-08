@@ -484,7 +484,7 @@ describe('native', function () {
   });
 
   describe('should panic', function () {
-    it('panic on allowed classes tag attributes', function () {
+    it('on allowed classes tag attributes', function () {
       assert.throws(function () {
         let fragment = "<p class=\"foo bar\"><a class=\"baz bleh\">Hey</a></p>";
         clean(fragment, {
@@ -500,7 +500,7 @@ describe('native', function () {
         });
       });
     });
-    it('panic on allowed classes generic attributes', function () {
+    it('on allowed classes generic attributes', function () {
       assert.throws(function () {
         let fragment = "<p class=\"foo bar\"><a class=\"baz bleh\">Hey</a></p>";
         clean(fragment, {
@@ -513,7 +513,7 @@ describe('native', function () {
         });
       });
     });
-    it('panic on clean content tag attribute', function () {
+    it('on clean content tag attribute', function () {
       assert.throws(function () {
         clean("", {
           tags: defaults.tags.filter(x => x !== "a"),
@@ -521,7 +521,7 @@ describe('native', function () {
         });
       });
     });
-    it('panic on clean content tag', function () {
+    it('on clean content tag', function () {
       assert.throws(function () {
         clean("", {
           clean_content_tags: ["a"],

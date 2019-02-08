@@ -144,6 +144,17 @@ function validateOptions(options: Partial<BuilderOptions>): void {
       'Option \'link_rel\' must be \'null\' or a string');
   }
   assertMapArray('allowed_classes');
+  assert(
+    Object.keys(options.allowed_classes || defaults.allowed_classes).length === 0 ||
+    !(options.generic_attributes || defaults.generic_attributes).includes('class'),
+    'Option \'generic_attributes\' can not contain \'class\' if there are \'allowed_classes\''
+  );
+  assert(
+    Object.keys(options.allowed_classes || defaults.allowed_classes).every(
+      tag => !(options.tag_attributes || defaults.tag_attributes)[tag].includes('class')
+    ),
+    'Option \'tag_attributes\' can not contain \'class\' for any tags in \'allowed_classes\''
+  );
   if (hasOwnProperty(options, 'strip_comments')) {
     assert(typeof options.strip_comments === 'boolean');
   }
@@ -153,15 +164,13 @@ function validateOptions(options: Partial<BuilderOptions>): void {
   }
 }
 
-export const settings = {
-  validate: true,
-};
+type Options = Partial<BuilderOptions & { validate: boolean }>;
 
 export class Ammonia extends Cleaner {
   // Configure options
-  public constructor(options?: Partial<BuilderOptions>) {
+  public constructor(options?: Options) {
     const opts = options || {};
-    if (settings.validate) { validateOptions(opts); }
+    if (options.validate) { validateOptions(opts); }
     super(opts);
   }
 
@@ -176,8 +185,8 @@ export class Ammonia extends Cleaner {
 /**
  * Sanitizes an HTML fragment in a string according to the given options.
  */
-export function sanitize(input: string, options?: Partial<BuilderOptions>): string {
+export function sanitize(input: string, options?: Options): string {
   const opts = options || {};
-  if (settings.validate) { validateOptions(opts); }
+  if (options.validate) { validateOptions(opts); }
   return clean(input, opts);
 }
