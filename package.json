@@ -13,10 +13,11 @@
     "neon-cli": "^0.2.0"
   },
   "scripts": {
-    "install": "npm run build-ts && npm run build-neon",
-    "build-ts": "tsc",
-    "build-neon": "neon build",
-    "test": "mocha tests/*.js"
+    "tsc": "tsc",
+    "neon": "neon build",
+    "build": "npm run tsc && npm run neon",
+    "install": "npm run build",
+    "test": "npm run build && eslint ./src/* && mocha tests/*.js"
   },
   "devDependencies": {
     "@types/node": "^10.12.21",

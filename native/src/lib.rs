@@ -212,8 +212,8 @@ fn clean(mut cx: FunctionContext) -> JsResult<JsString> {
 /// This datatype holds pointers to the Holder and Builder
 /// This _should be_ safe because builder only holds refs to slices in holder
 pub struct CleanerBox {
-    holder: usize,
-    builder: usize,
+    holder: *mut Holder,
+    builder: *mut Builder<'static>,
 }
 impl CleanerBox {
     fn new<T: neon::object::This>(
@@ -228,24 +228,22 @@ impl CleanerBox {
         let builder_p = Box::into_raw(Box::new(builder));
 
         Ok(CleanerBox {
-            holder: holder_p as usize,
-            builder: builder_p as usize,
+            holder: holder_p,
+            builder: builder_p as *mut Builder<'static>,
         })
     }
 
-    fn clean(&mut self, input: String) -> String {
+    fn clean(&self, input: String) -> String {
         let builder_p = self.builder;
 
         let builder = unsafe {
-            Box::from_raw(builder_p as *mut Builder<'static>)
+            builder_p.as_ref().unwrap()
         };
 
         let cleaned = {
             let doc = builder.clean(&input);
             doc.to_string()
         };
-
-        self.builder = Box::into_raw(builder) as usize;
 
         cleaned
     }
@@ -256,8 +254,8 @@ impl Drop for CleanerBox {
         let holder_p = self.holder;
 
         unsafe {
-            Box::from_raw(builder_p as *mut Builder<'static>);
-            Box::from_raw(holder_p as *mut Holder);
+            Box::from_raw(builder_p);
+            Box::from_raw(holder_p);
         }
     }
 }
@@ -274,9 +272,9 @@ declare_types! {
             let input: String = cx.argument::<JsString>(0)?.value();
 
             let cleaned = {
-                let mut this = cx.this();
+                let this = cx.this();
                 let guard = cx.lock();
-                let mut cleaner = this.borrow_mut(&guard);
+                let cleaner = this.borrow(&guard);
                 cleaner.clean(input)
             };
 
