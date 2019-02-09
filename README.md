@@ -1,3 +1,5 @@
+**_Just use sanitize-html instead!_**
+
 # ammonia-node
 
 Node bindings for the [Ammonia HTML sanitation library]
@@ -16,20 +18,9 @@ If you want that, use a markup processor before running the sanitizer.
 [html5ever]: https://github.com/servo/html5ever "The HTML parser in Servo"
 [Ammonia HTML sanitation library]: https://github.com/rust-ammonia/ammonia "Repair and secure untrusted HTML"
 
-Installation
------------
-
-To use `ammonia-node`, add it to your project via `npm` or `yarn`
-
-```
-npm install ammonia
-yarn add ammonia
-```
-
-Todo
+Not Really Todo
 -----
 - Add a compatibility layer to make ammonia-node a drop-in replacement for [sanitize-html]
-
 
 Benchmarks
 -----
