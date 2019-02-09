@@ -5,7 +5,7 @@
 const assert = require('assert');
 const { defaults, sanitize } = require('../lib');
 
-const clean = (input, options) => sanitize(input, options);
+const clean = (input, options) => sanitize(input, { ...(options || {}), validate: true });
 
 describe('validator', function () {
 

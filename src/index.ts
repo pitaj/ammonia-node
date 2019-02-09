@@ -170,7 +170,7 @@ export class Ammonia extends Cleaner {
   // Configure options
   public constructor(options?: Options) {
     const opts = options || {};
-    if (options.validate) { validateOptions(opts); }
+    if (opts.validate) { validateOptions(opts); }
     super(opts);
   }
 
@@ -187,6 +187,6 @@ export class Ammonia extends Cleaner {
  */
 export function sanitize(input: string, options?: Options): string {
   const opts = options || {};
-  if (options.validate) { validateOptions(opts); }
+  if (opts.validate) { validateOptions(opts); }
   return clean(input, opts);
 }

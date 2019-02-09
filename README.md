@@ -29,9 +29,25 @@ yarn add ammonia
 Todo
 -----
 - Add a compatibility layer to make ammonia-node a drop-in replacement for [sanitize-html]
-- Benchmarks vs [sanitize-html]
+
+
+Benchmarks
+-----
+
+With some [very naive benchmarks](tests/benchmark.js), it looks like ammonia-node is much slower than the alternatives:
+
+| tool | time (less is better) |
+|----------|---------|
+| ammonia | 1895521ns |
+| [sanitize-html] | 33254ns |
+| [xss] | 7814ns |
+| [DOMPurify] on JSDOM | 6639ns |
 
 [sanitize-html]: https://github.com/punkave/sanitize-html "provides a simple HTML sanitizer with a clear API"
+[xss]: https://github.com/leizongmin/js-xss "Sanitize untrusted HTML (to prevent XSS) with a configuration specified by a Whitelist"
+[DOMPurify]: https://github.com/cure53/DOMPurify "DOMPurify - a DOM-only, super-fast, uber-tolerant XSS sanitizer"
+
+This makes me sad :( if you have any ideas on speeding up the library, let me know!
 
 Thanks
 ------
