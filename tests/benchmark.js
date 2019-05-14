@@ -1,5 +1,3 @@
-`it\(('[^']+'), function ?\(\) \{[\s\n]*assert\.equal\(sanitizeHtml\(('(?:[^']|\\')+')\), ('(?:[^']|\\')+')\);[\s\n]*\}\);`;
-
 const { readFileSync } = require('fs');
 const assert = require('assert');
 
@@ -68,7 +66,7 @@ const tests = {
     '<a href="hello.html">Hi</a>', '<a href="hello.html">Hi</a>'
   ],
   'ipsum': [
-    readFileSync(`${__dirname}/ipsum.html`)
+    readFileSync(`${__dirname}/ipsum.html`, 'utf8')
   ]
 };
 
@@ -87,26 +85,33 @@ const sanitizeHtml = require('sanitize-html');
 
 
 const trials = 10000;
-function bench(name, cleanFn) {
-  const sources = Object.entries(tests);
+function bench(name, cleanFn, buffers) {
+  const sources = buffers ? Object.values(tests).map(([dirty]) => Buffer.from(dirty)) : Object.values(tests).map(([dirty]) => dirty);
 
-  let total = 0;
+  let totalNs = 0;
   for (let i = 0; i < trials; i += 1) {
-    const before = process.hrtime();
-    
-    sources.forEach(([dirty]) => {
+    sources.forEach(dirty => {
+      const before = process.hrtime();
+      
       const clean = cleanFn(dirty);
+      
+      const [, ns] = process.hrtime(before);
+      totalNs += ns;
+
       assert(clean);
     });
-    
-    total += process.hrtime(before)[1];
   }
 
-  const mean = total / trials;
-  console.log(`${name.padStart(15)} took ${mean.toFixed().padStart(10)}ns`);
+  const meanNs = totalNs / trials;
+  console.log(`${name.padStart(20)} took ${meanNs.toFixed().padStart(7)}ns on average`);
 }
 
-bench('ammonia', input => ammonia.clean(input));
+console.log('\n Running benchmarks...');
+
+bench('ammonia + Buffer', input => ammonia.clean(input), true);
+bench('ammonia', input => ammonia.sanitize(input));
 bench('DOMPurify', input => DOMPurify.sanitize(input));
 bench('xss', input => xss(input));
 bench('sanitize-html', input => sanitizeHtml(input));
+
+console.log('\n');

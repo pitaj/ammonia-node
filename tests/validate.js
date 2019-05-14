@@ -3,17 +3,14 @@
 // test validateOptions
 
 const assert = require('assert');
-const { defaults, sanitize } = require('../lib');
-
-const clean = (input, options) => sanitize(input, { ...(options || {}), validate: true });
+const { defaults, validateOptions } = require('../lib');
 
 describe('validator', function () {
 
   describe('should fail', function () {
     it('on allowed classes tag attributes', function () {
       assert.throws(function () {
-        let fragment = "<p class=\"foo bar\"><a class=\"baz bleh\">Hey</a></p>";
-        clean(fragment, {
+        validateOptions({
           link_rel: null,
           tag_attributes: {
             "p": ["class"],
@@ -30,8 +27,7 @@ describe('validator', function () {
     });
     it('on allowed classes generic attributes', function () {
       assert.throws(function () {
-        let fragment = "<p class=\"foo bar\"><a class=\"baz bleh\">Hey</a></p>";
-        clean(fragment, {
+        validateOptions({
           link_rel: null,
           generic_attributes: ["class", "href", "some-foo"],
           allowed_classes: {
@@ -45,7 +41,7 @@ describe('validator', function () {
     });
     it('on clean content tag attribute', function () {
       assert.throws(function () {
-        clean("", {
+        validateOptions({
           tags: defaults.tags.filter(x => x !== "a"),
           clean_content_tags: ["a"],
         });
@@ -55,7 +51,7 @@ describe('validator', function () {
     });
     it('on clean content tag', function () {
       assert.throws(function () {
-        clean("", {
+        validateOptions({
           clean_content_tags: ["a"],
         });
       }, {

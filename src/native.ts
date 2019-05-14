@@ -183,7 +183,7 @@ class CleanerType {
    * Sanitizes an HTML fragment in a string according to the configured options
    */
   // eslint-disable-next-line
-  public clean(input: string): string { return ''; };
+  public clean(input: Buffer): Buffer { return Buffer.from(''); };
 }
 
 /**
@@ -201,4 +201,4 @@ export const Cleaner: typeof CleanerType = addon.Cleaner;
  * Use the `Cleaner` class instead when using the same options many times
  */
 // eslint-disable-next-line prefer-destructuring
-export const clean: (input: string, options: Partial<BuilderOptions>) => string = addon.clean;
+export const clean: (input: Buffer, options: Partial<BuilderOptions>) => Buffer = addon.clean;

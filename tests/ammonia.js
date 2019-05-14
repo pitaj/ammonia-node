@@ -1,18 +1,17 @@
 'use strict';
 
-// test the native module
+// test the ammonia module
 // most of the tests are adapted from the ammonia repository
 // https://github.com/rust-ammonia/ammonia/blob/master/src/lib.rs
 
 const assert = require('assert');
-const native = require('../lib/native');
-const { defaults } = require('../lib');
+const { Ammonia, sanitize, defaults } = require('../lib');
 
-describe('native', function () {
+describe('ammonia', function () {
 
   describe('default cleaner instance', function () {
-    const cleaner = new native.Cleaner({});
-    const clean = input => cleaner.clean(input);
+    const cleaner = new Ammonia();
+    const clean = input => cleaner.sanitize(input);
 
     it('included angles', function () {
       let fragment = "1 < 2";
@@ -52,7 +51,7 @@ describe('native', function () {
     });
   });
 
-  const clean = (input, options) => native.clean(input, options || {});
+  const clean = (input, options) => sanitize(input, options);
 
   describe('options', function () {
     it('allow url relative', function () {

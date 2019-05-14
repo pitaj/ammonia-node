@@ -20,7 +20,10 @@ module.exports = {
       minProperties: 5,
       consistent: true
     }],
-    '@typescript-eslint/indent': ['error', 2]
+    '@typescript-eslint/indent': ['error', 2],
+    '@typescript-eslint/explicit-function-return-type': ['error', {
+      allowExpressions: true
+    }]
   },
 };
   

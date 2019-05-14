@@ -4,6 +4,7 @@ extern crate ammonia;
 extern crate simple_interner;
 
 use std::collections::{HashMap, HashSet};
+use std::str;
 
 use neon::prelude::*;
 use ammonia::{Builder, UrlRelative, Url}; // UrlRelativeEvaluate};
@@ -194,19 +195,29 @@ fn build_from_arguments<'a, T: neon::object::This>(
     Ok(builder)
 }
 
-fn clean(mut cx: FunctionContext) -> JsResult<JsString> {
-    let input = cx.argument::<JsString>(0)?;
+fn clean(mut cx: FunctionContext) -> JsResult<JsBuffer> {
+    let input = cx.argument::<JsBuffer>(0)?;
     let options = cx.argument::<JsObject>(1)?;
 
     let cleaned = {
+        let guard = cx.lock();
+        let input: &[u8] = input.borrow(&guard).as_slice();
+        let input: &str = unsafe { str::from_utf8_unchecked(input) };
         let holder = Interner::new();
         let builder = build_from_arguments(&mut cx, options, &holder)?;
 
-        let doc = builder.clean(&input.value());
-        doc.to_string()
+        builder.clean(input).to_string()
     };
-    
-    Ok(cx.string(cleaned))
+
+    let cleaned = {
+        let buffer = unsafe { JsBuffer::uninitialized(&mut cx, cleaned.len() as u32)? };
+        let guard = cx.lock();
+        let bytes: &mut [u8] = buffer.borrow(&guard).as_mut_slice();
+        bytes.copy_from_slice(&cleaned.as_bytes());
+        buffer
+    };
+
+    Ok(cleaned)
 }
 
 /// This datatype holds pointers to the Holder and Builder
@@ -231,9 +242,9 @@ impl CleanerBox {
         })
     }
 
-    fn clean(&self, input: String) -> String {
+    fn clean(&self, input: &str) -> String {
         let cleaned = {
-            let doc = self.builder.clean(&input);
+            let doc = self.builder.clean(input);
             doc.to_string()
         };
 
@@ -257,16 +268,26 @@ declare_types! {
         }
 
         method clean(mut cx) {
-            let input: String = cx.argument::<JsString>(0)?.value();
+            let input = cx.argument::<JsBuffer>(0)?;
 
             let cleaned = {
                 let this = cx.this();
                 let guard = cx.lock();
+                let input: &[u8] = input.borrow(&guard).as_slice();
+                let input: &str = unsafe { str::from_utf8_unchecked(input) };
                 let cleaner = this.borrow(&guard);
                 cleaner.clean(input)
             };
 
-            Ok(cx.string(cleaned).upcast())
+            let cleaned = {
+                let buffer = unsafe { JsBuffer::uninitialized(&mut cx, cleaned.len() as u32)? };
+                let guard = cx.lock();
+                let bytes: &mut [u8] = buffer.borrow(&guard).as_mut_slice();
+                bytes.copy_from_slice(&cleaned.as_bytes());
+                buffer
+            };
+
+            Ok(cleaned.upcast())
         }
     }
 }

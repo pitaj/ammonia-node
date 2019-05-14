@@ -25,20 +25,19 @@ Not Really Todo
 Benchmarks
 -----
 
-With some [very naive benchmarks](tests/benchmark.js), it looks like ammonia-node is much slower than the alternatives:
+With some [very naive benchmarks](tests/benchmark.js), it looks like ammonia-node is a little faster than sanitize-html.
 
 | tool | time (less is better) |
 |----------|---------|
-| ammonia | 1895521ns |
-| [sanitize-html] | 33254ns |
-| [xss] | 7814ns |
-| [DOMPurify] on JSDOM | 6639ns |
+| [DOMPurify] on JSDOM | 8322573ns |
+| [sanitize-html] | 628458ns |
+| ammonia | 481622ns |
+| ammonia + Buffer | 455013ns |
+| [xss] | 198876ns |
 
 [sanitize-html]: https://github.com/punkave/sanitize-html "provides a simple HTML sanitizer with a clear API"
 [xss]: https://github.com/leizongmin/js-xss "Sanitize untrusted HTML (to prevent XSS) with a configuration specified by a Whitelist"
 [DOMPurify]: https://github.com/cure53/DOMPurify "DOMPurify - a DOM-only, super-fast, uber-tolerant XSS sanitizer"
-
-This makes me sad :( if you have any ideas on speeding up the library, let me know!
 
 Thanks
 ------

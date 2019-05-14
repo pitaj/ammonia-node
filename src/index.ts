@@ -51,7 +51,11 @@ export const defaults: BuilderOptions = {
   id_prefix: null,
 };
 
-function validateOptions(options: Partial<BuilderOptions>): void {
+/**
+ * Check to ensure options object is valid
+ * @param options - Options to validate
+ */
+export function validateOptions(options: Partial<BuilderOptions>): void {
   const hasOwnProperty = <T>(
     obj: T,
     key: keyof T
@@ -164,29 +168,25 @@ function validateOptions(options: Partial<BuilderOptions>): void {
   }
 }
 
-type Options = Partial<BuilderOptions & { validate: boolean }>;
+type Options = Partial<BuilderOptions>;
 
 export class Ammonia extends Cleaner {
   // Configure options
-  public constructor(options?: Options) {
-    const opts = options || {};
-    if (opts.validate) { validateOptions(opts); }
-    super(opts);
+  public constructor(options: Options = {}) {
+    super(options);
   }
 
   /**
    * Sanitizes an HTML fragment in a string according to the configured options.
    */
   public sanitize(input: string): string {
-    return super.clean(input);
+    return super.clean(Buffer.from(input)).toString('utf8');
   }
 }
 
 /**
  * Sanitizes an HTML fragment in a string according to the given options.
  */
-export function sanitize(input: string, options?: Options): string {
-  const opts = options || {};
-  if (opts.validate) { validateOptions(opts); }
-  return clean(input, opts);
+export function sanitize(input: string, options: Options = {}): string {
+  return clean(Buffer.from(input), options).toString('utf8');
 }
