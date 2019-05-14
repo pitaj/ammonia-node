@@ -1,6 +1,6 @@
 {
   "name": "ammonia-node",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Node bindings for the Ammonia HTML sanitation library",
   "main": "lib/index.js",
   "repository": {
