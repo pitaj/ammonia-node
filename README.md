@@ -29,11 +29,11 @@ With some [very naive benchmarks](tests/benchmark.js), it looks like ammonia-nod
 
 | tool | time (less is better) |
 |----------|---------|
-| [DOMPurify] on JSDOM | 8322573ns |
-| [sanitize-html] | 628458ns |
-| ammonia | 481622ns |
-| ammonia + Buffer | 455013ns |
-| [xss] | 198876ns |
+| [DOMPurify] on JSDOM | 7565319ns |
+| [sanitize-html]      | 677818ns  |
+| ammonia w/ string    | 499031ns  |
+| ammonia w/ Buffer    | 474540ns  |
+| [xss]                | 219687ns  |
 
 [sanitize-html]: https://github.com/punkave/sanitize-html "provides a simple HTML sanitizer with a clear API"
 [xss]: https://github.com/leizongmin/js-xss "Sanitize untrusted HTML (to prevent XSS) with a configuration specified by a Whitelist"
