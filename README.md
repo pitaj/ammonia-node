@@ -1,4 +1,4 @@
-**_Just use sanitize-html instead!_**
+**_You should probably just use sanitize-html instead!_**
 
 # ammonia-node
 

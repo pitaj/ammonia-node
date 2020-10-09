@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable prefer-destructuring, @typescript-eslint/no-var-requires */
 const addon = require('../native');
 
 export interface BuilderOptions {
@@ -175,15 +175,11 @@ export interface BuilderOptions {
   id_prefix: string | null;
 }
 
-class CleanerType {
-  // eslint-disable-next-line
-  public constructor(options: Partial<BuilderOptions>) {}
-
+export interface Cleaner {
   /**
    * Sanitizes an HTML fragment in a string according to the configured options
    */
-  // eslint-disable-next-line
-  public clean(input: Buffer): Buffer { return Buffer.from(''); };
+  clean(input: Buffer): Buffer;
 }
 
 /**
@@ -191,8 +187,7 @@ class CleanerType {
  *
  * Prefer this over the `clean` function when using the same options many times
  */
-// eslint-disable-next-line prefer-destructuring
-export const Cleaner: typeof CleanerType = addon.Cleaner;
+export const Cleaner: new (options: Partial<BuilderOptions>) => Cleaner = addon.Cleaner;
 
 /**
  * Sanitizes an HTML fragment in a string according to the given options.
@@ -200,5 +195,11 @@ export const Cleaner: typeof CleanerType = addon.Cleaner;
  *
  * Use the `Cleaner` class instead when using the same options many times
  */
-// eslint-disable-next-line prefer-destructuring
 export const clean: (input: Buffer, options: Partial<BuilderOptions>) => Buffer = addon.clean;
+
+/**
+ * Sanitizes an HTML fragment in a string according to the default ammonia options.
+ *
+ * Use the `Cleaner` class instead when using the same options many times
+ */
+export const defaults: (input: Buffer) => Buffer = addon.default;
